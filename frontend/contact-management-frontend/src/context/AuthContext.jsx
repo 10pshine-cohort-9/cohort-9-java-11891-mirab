@@ -1,19 +1,23 @@
-import { createContext, useState, useContext } from 'react';
+import { createContext, useState, useContext, useMemo } from 'react';
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-
-        const [user, setUser] = useState(() => {
+    const [user, setUser] = useState(() => {
+        try {
+            const savedUser = localStorage.getItem('user');
+            return savedUser ? JSON.parse(savedUser) : null;
+        } catch (e) {
+            console.error('Failed to parse saved user data:', e);
             try {
-                const savedUser = localStorage.getItem('user');
-                return savedUser ? JSON.parse(savedUser) : null;
-            } catch (e) {
                 localStorage.removeItem('user');
                 localStorage.removeItem('token');
-                return null;
+            } catch (cleanupError) {
+                console.error('Failed to clear corrupted storage:', cleanupError);
             }
-        });
+            return null;
+        }
+    });
 
     const login = (userData, token) => {
         localStorage.setItem('token', token);
@@ -22,15 +26,25 @@ export function AuthProvider({ children }) {
     };
 
     const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
+        try {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+        } catch (e) {
+            console.error('Failed to clear storage during logout:', e);
+        } finally {
+            setUser(null);
+        }
     };
 
     const isAuthenticated = !!user;
 
+    const contextValue = useMemo(
+        () => ({ user, login, logout, isAuthenticated }),
+        [user, isAuthenticated]
+    );
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthenticated }}>
+        <AuthContext.Provider value={contextValue}>
             {children}
         </AuthContext.Provider>
     );

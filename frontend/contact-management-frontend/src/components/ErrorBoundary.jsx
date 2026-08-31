@@ -26,6 +26,7 @@ class ErrorBoundary extends Component {
                     <h2>Something went wrong</h2>
                     <p style={{ color: '#666' }}>Please try again.</p>
                     <button
+                        type="button"
                         onClick={this.handleRetry}
                         style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', marginTop: '10px' }}
                     >
