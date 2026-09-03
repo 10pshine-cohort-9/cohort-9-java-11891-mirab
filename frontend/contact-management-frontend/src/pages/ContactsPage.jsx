@@ -4,12 +4,15 @@ import { getContacts, searchContacts, deleteContact, createContact, updateContac
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
 import ContactFormModal from '../components/ContactFormModal';
+import ContactDetailModal from '../components/ContactDetailModal';
 import Toast from '../components/Toast';
 
 const AVATAR_COLORS = ['#2563eb', '#7c3aed', '#dc2626', '#059669', '#d97706', '#db2777'];
 
 function getInitials(first, last) {
-    return `${first?.[0] || ''}${last?.[0] || ''}`.toUpperCase();
+    const f = first ? String.fromCodePoint(first.codePointAt(0)) : '';
+    const l = last ? String.fromCodePoint(last.codePointAt(0)) : '';
+    return `${f}${l}`.toUpperCase();
 }
 
 function getAvatarColor(name) {
@@ -24,6 +27,7 @@ function ContactsPage() {
     const [loading, setLoading] = useState(true);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [formModal, setFormModal] = useState({ isOpen: false, mode: 'create', data: null });
+    const [detailContact, setDetailContact] = useState(null);
     const [toast, setToast] = useState('');
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
@@ -78,6 +82,7 @@ function ContactsPage() {
         try {
             await deleteContact(deleteTarget.id);
             setDeleteTarget(null);
+            setDetailContact(null);
             showToast('Contact deleted');
             loadContacts();
         } catch (err) {
@@ -100,6 +105,15 @@ function ContactsPage() {
     const handleLogout = () => {
         logout();
         navigate('/login');
+    };
+
+    const openEditFromDetail = (contact) => {
+        setDetailContact(null);
+        setFormModal({ isOpen: true, mode: 'edit', data: contact });
+    };
+
+    const openDeleteFromDetail = (contact) => {
+        setDeleteTarget(contact);
     };
 
     const renderContactsList = () => {
@@ -149,6 +163,7 @@ function ContactsPage() {
                                 </div>
                             </div>
                             <div style={styles.actions}>
+                                <button type="button" onClick={() => setDetailContact(c)} style={styles.viewButton}>View</button>
                                 <button type="button" onClick={() => setFormModal({ isOpen: true, mode: 'edit', data: c })} style={styles.editButton}>Edit</button>
                                 <button type="button" onClick={() => setDeleteTarget(c)} style={styles.deleteButton}>Delete</button>
                             </div>
@@ -190,6 +205,14 @@ function ContactsPage() {
                 </div>
             )}
 
+            <ContactDetailModal
+                isOpen={!!detailContact}
+                contact={detailContact}
+                onEdit={openEditFromDetail}
+                onDelete={openDeleteFromDetail}
+                onClose={() => setDetailContact(null)}
+            />
+
             <ConfirmModal
                 isOpen={!!deleteTarget}
                 title="Delete contact"
@@ -223,6 +246,7 @@ const styles = {
     avatar: { width: '40px', height: '40px', borderRadius: '50%', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', flexShrink: 0 },
     details: { fontSize: '13px', color: '#666', marginTop: '4px' },
     actions: { display: 'flex', gap: '8px' },
+    viewButton: { padding: '6px 12px', background: '#dbeafe', color: '#1d4ed8', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' },
     editButton: { padding: '6px 12px', background: '#e5e7eb', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' },
     deleteButton: { padding: '6px 12px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' },
     skeletonCard: { display: 'flex', alignItems: 'center', gap: '12px', background: 'white', padding: '14px', borderRadius: '8px', marginBottom: '10px' },
